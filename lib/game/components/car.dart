@@ -88,11 +88,6 @@ class Car extends BodyComponent {
     canvas.drawCircle(Offset(w * 0.3, -h * 0.35), wheelR, wheelPaint);
   }
 
-  @override
-  void update(double dt) {
-    super.update(dt);
-  }
-
   bool hasFallenOff(Vector2 screenSize) {
     final pos = body.position;
     return pos.y > screenSize.y + 5 ||

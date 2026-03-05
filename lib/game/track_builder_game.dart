@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui' show Color, Offset;
 
+import 'package:flame/components.dart' show Anchor;
 import 'package:flame/events.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 
@@ -15,6 +16,7 @@ import 'components/track_piece_catalog.dart';
 import 'systems/physics_system.dart';
 import 'systems/scoring_system.dart';
 import 'systems/audio_system.dart';
+import 'systems/contact_listener.dart';
 import 'systems/track_validator.dart';
 import 'levels/level_loader.dart';
 
@@ -41,6 +43,7 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
   TrackBodyRenderer? _trackRenderer;
 
   Car? car;
+  late final TrackContactListener _contactListener;
 
   TrackPieceType? selectedPieceType;
   void Function()? onStateChanged;
@@ -57,7 +60,7 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
   double _gridOffsetY = 0;
 
   TrackBuilderGame({required this.levelId})
-      : super(gravity: Vector2(0, 9.81));
+      : super(gravity: Vector2(0, 9.81), zoom: 1);
 
   @override
   Future<void> onLoad() async {
@@ -108,11 +111,35 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     audioSystem = AudioSystem();
     await audioSystem.init();
 
+    // Contact listener for boosters and end zone
+    _contactListener = TrackContactListener();
+    _contactListener.onReachedEnd = () {
+      if (phase == GamePhase.running) {
+        onRunComplete(success: true);
+      }
+    };
+    _contactListener.onBoostHit = () {
+      if (car != null && phase == GamePhase.running) {
+        physicsSystem.applyBoost(car!.body, force: 2.0);
+      }
+    };
+    world.physicsWorld.setContactListener(_contactListener);
+
     for (final entry in levelData.pieceLimits.entries) {
       piecesRemaining[entry.key] = entry.value;
     }
 
     overlays.add('BuildHud');
+
+    // Configure camera so Forge2D physics bodies align with our pixel grid.
+    // Zoom = cellPixelSize means 1 physics unit = 1 grid cell = cellPixelSize pixels.
+    // The camera viewfinder is anchored at top-left and offset to match grid position.
+    camera.viewfinder.zoom = _cellPixelSize;
+    camera.viewfinder.anchor = Anchor.topLeft;
+    camera.viewfinder.position = Vector2(
+      -_gridOffsetX / _cellPixelSize,
+      -_gridOffsetY / _cellPixelSize,
+    );
   }
 
   double get cellPixelSize => _cellPixelSize;
