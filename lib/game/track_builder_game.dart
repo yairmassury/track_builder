@@ -23,8 +23,10 @@ import 'levels/level_loader.dart';
 class TrackBuilderGame extends Forge2DGame with TapCallbacks {
   final int levelId;
 
+  Color _bgColor = const Color(0xFF1A1A2E);
+
   @override
-  Color backgroundColor() => const Color(0xFF1A1A2E);
+  Color backgroundColor() => _bgColor;
 
   GamePhase phase = GamePhase.building;
   late LevelData levelData;
@@ -68,6 +70,15 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
 
     levelLoader = LevelLoader();
     levelData = await levelLoader.loadLevel(levelId);
+
+    // Set world-themed background
+    _bgColor = switch (levelData.world) {
+      'desert' => const Color(0xFF2D1B0E),
+      'space' => const Color(0xFF0A0A2A),
+      'ocean' => const Color(0xFF0A1A3A),
+      'jungle' => const Color(0xFF0A2A1A),
+      _ => const Color(0xFF1A1A2E),
+    };
 
     // Calculate scale to fit grid on screen
     final screenW = size.x;

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -442,7 +444,7 @@ class _RunHud extends StatelessWidget {
               onTap: () => game.resetLevel(),
             ),
             const Spacer(),
-            // Timer display
+            // Timer and speed display
             Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -453,13 +455,44 @@ class _RunHud extends StatelessWidget {
               child: StreamBuilder(
                 stream: Stream.periodic(const Duration(milliseconds: 100)),
                 builder: (ctx, _) {
-                  return Text(
-                    '${game.runTime.toStringAsFixed(1)}s',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  final speed = game.car != null
+                      ? game.physicsSystem.getSpeed(game.car!.body)
+                      : 0.0;
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${game.runTime.toStringAsFixed(1)}s',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.speed,
+                        color: speed > 5
+                            ? Colors.red
+                            : speed > 2
+                                ? Colors.orange
+                                : Colors.green,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        speed.toStringAsFixed(1),
+                        style: TextStyle(
+                          color: speed > 5
+                              ? Colors.red
+                              : speed > 2
+                                  ? Colors.orange
+                                  : Colors.green,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
@@ -528,8 +561,12 @@ class _LevelCompleteOverlayState extends State<_LevelCompleteOverlay>
     final stars = widget.game.earnedStars;
     final coins = widget.game.earnedCoins;
 
-    return Center(
-      child: ScaleTransition(
+    return Stack(
+      children: [
+        // Confetti particles
+        ..._buildConfetti(context),
+        Center(
+          child: ScaleTransition(
         scale: _bounceAnim,
         child: Container(
           padding: const EdgeInsets.all(32),
@@ -653,6 +690,112 @@ class _LevelCompleteOverlayState extends State<_LevelCompleteOverlay>
           ),
         ),
       ),
+    ),
+      ],
+    );
+  }
+
+  List<Widget> _buildConfetti(BuildContext context) {
+    final rng = math.Random(42);
+    final screenW = MediaQuery.of(context).size.width;
+    final screenH = MediaQuery.of(context).size.height;
+    final colors = [
+      Colors.amber,
+      Colors.red,
+      Colors.blue,
+      Colors.green,
+      Colors.purple,
+      Colors.orange,
+      Colors.pink,
+    ];
+
+    return List.generate(20, (i) {
+      final startX = rng.nextDouble() * screenW;
+      final color = colors[rng.nextInt(colors.length)];
+      final size = 6.0 + rng.nextDouble() * 8;
+      final delay = Duration(milliseconds: rng.nextInt(1500));
+      final duration = Duration(milliseconds: 1500 + rng.nextInt(1000));
+
+      return _ConfettiPiece(
+        startX: startX,
+        screenH: screenH,
+        color: color,
+        size: size,
+        delay: delay,
+        duration: duration,
+      );
+    });
+  }
+}
+
+class _ConfettiPiece extends StatefulWidget {
+  final double startX;
+  final double screenH;
+  final Color color;
+  final double size;
+  final Duration delay;
+  final Duration duration;
+
+  const _ConfettiPiece({
+    required this.startX,
+    required this.screenH,
+    required this.color,
+    required this.size,
+    required this.delay,
+    required this.duration,
+  });
+
+  @override
+  State<_ConfettiPiece> createState() => _ConfettiPieceState();
+}
+
+class _ConfettiPieceState extends State<_ConfettiPiece>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+    Future.delayed(widget.delay, () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _controller.value;
+        return Positioned(
+          left: widget.startX + math.sin(t * 6) * 30,
+          top: -20 + t * (widget.screenH + 40),
+          child: Opacity(
+            opacity: t < 0.8 ? 1.0 : (1.0 - (t - 0.8) / 0.2),
+            child: Transform.rotate(
+              angle: t * 8,
+              child: Container(
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
