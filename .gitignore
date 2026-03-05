@@ -1,0 +1,32 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+pubspec.lock
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Android
+android/.gradle/
+android/local.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+**/android/key.properties
+
+# iOS (not targeting but just in case)
+ios/Pods/
+ios/.symlinks/
+
+# Misc
+.DS_Store
+*.log

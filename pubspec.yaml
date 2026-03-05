@@ -1,0 +1,48 @@
+name: track_builder
+description: A fun track-building game for kids 4-8. Build tracks, launch cars, and watch them ride!
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Game engine
+  flame: ^1.14.0
+  flame_audio: ^2.1.0
+  flame_forge2d: ^0.16.0
+  flame_rive: ^0.2.0
+
+  # Local storage (offline-only, no network)
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Utilities
+  equatable: ^2.0.5
+  flutter_bloc: ^8.1.3
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.8
+  hive_generator: ^2.0.1
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/sprites/
+    - assets/images/backgrounds/
+    - assets/images/ui/
+    - assets/images/effects/
+    - assets/audio/music/
+    - assets/audio/sfx/
+    - assets/audio/voice/
+    - assets/animations/
+    - assets/data/
