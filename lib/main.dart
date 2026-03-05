@@ -167,6 +167,38 @@ class _BuildHudState extends State<_BuildHud> {
                     ),
                   ),
                 ),
+                // Eraser toggle
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      widget.game.removeMode = !widget.game.removeMode;
+                      if (widget.game.removeMode) {
+                        _selectedType = null;
+                      }
+                    });
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: widget.game.removeMode
+                          ? Colors.red.withAlpha(180)
+                          : Colors.black45,
+                      borderRadius: BorderRadius.circular(12),
+                      border: widget.game.removeMode
+                          ? Border.all(color: Colors.red, width: 2)
+                          : null,
+                    ),
+                    child: Icon(
+                      Icons.backspace_outlined,
+                      color: widget.game.removeMode
+                          ? Colors.white
+                          : Colors.white70,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
                 _HudButton(
                   icon: Icons.delete_outline,
                   onTap: () {
@@ -229,6 +261,7 @@ class _BuildHudState extends State<_BuildHud> {
                       ? () => setState(() {
                             _selectedType =
                                 isSelected ? null : type;
+                            widget.game.removeMode = false;
                           })
                       : null,
                   child: _PalettePiece(

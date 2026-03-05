@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'dart:ui' show Offset;
+import 'dart:ui' show Color, Offset;
 
 import 'package:flame/events.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
@@ -10,6 +10,7 @@ import 'components/car.dart';
 import 'components/grid.dart';
 import 'components/grid_renderer.dart';
 import 'components/track_piece.dart';
+import 'components/track_body_renderer.dart';
 import 'components/track_piece_catalog.dart';
 import 'systems/physics_system.dart';
 import 'systems/scoring_system.dart';
@@ -19,6 +20,9 @@ import 'levels/level_loader.dart';
 
 class TrackBuilderGame extends Forge2DGame with TapCallbacks {
   final int levelId;
+
+  @override
+  Color backgroundColor() => const Color(0xFF1A1A2E);
 
   GamePhase phase = GamePhase.building;
   late LevelData levelData;
@@ -34,6 +38,7 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
   final Map<GridCell, PlacedPiece> placedPieceData = {};
   final Map<String, int> piecesRemaining = {};
   final List<Body> _trackBodies = [];
+  TrackBodyRenderer? _trackRenderer;
 
   Car? car;
 
@@ -195,7 +200,11 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     if (cell == null) return;
 
     if (placedPieceData.containsKey(cell)) {
-      rotatePiece(cell);
+      if (removeMode) {
+        removePiece(cell);
+      } else {
+        rotatePiece(cell);
+      }
       onStateChanged?.call();
       return;
     }
@@ -211,6 +220,9 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
       }
     }
   }
+
+  /// When true, tapping a placed piece removes it instead of rotating
+  bool removeMode = false;
 
   void launchCar() {
     if (phase != GamePhase.building) return;
@@ -228,6 +240,15 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     _stuckTime = 0;
 
     _createTrackPhysicsBodies();
+
+    // Add visual renderer for track surfaces
+    _trackRenderer = TrackBodyRenderer(
+      trackBodies: _trackBodies,
+      pixelsPerUnit: _cellPixelSize,
+      offsetX: _gridOffsetX,
+      offsetY: _gridOffsetY,
+    );
+    add(_trackRenderer!);
 
     final carStartPos = Vector2(
       (startCell.col + 0.5) * grid.gridSize,
@@ -417,6 +438,11 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     if (car != null) {
       remove(car!);
       car = null;
+    }
+
+    if (_trackRenderer != null) {
+      remove(_trackRenderer!);
+      _trackRenderer = null;
     }
 
     for (final body in _trackBodies) {
