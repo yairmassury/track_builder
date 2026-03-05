@@ -495,18 +495,26 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
 
     if (total >= 1) s.earnTrophy('first_star');
     if (total >= 10) s.earnTrophy('ten_stars');
+    if (total >= 30) s.earnTrophy('thirty_stars');
 
-    // Desert world trophies (levels 1-10, max 30 stars)
-    int desertStars = 0;
-    for (int i = 1; i <= 10; i++) {
-      desertStars += s.getLevelStars(i);
-    }
-    if (desertStars >= 9) s.earnTrophy('desert_bronze');
-    if (desertStars >= 18) s.earnTrophy('desert_silver');
-    if (desertStars >= 27) s.earnTrophy('desert_gold');
+    // World trophies (each world has 10 levels, max 30 stars)
+    _checkWorldTrophies(s, 'desert', 1, 10);
+    _checkWorldTrophies(s, 'space', 11, 20);
+    _checkWorldTrophies(s, 'ocean', 21, 30);
+    _checkWorldTrophies(s, 'jungle', 31, 40);
 
     // Car collector
     if (s.unlockedCars.length >= 4) s.earnTrophy('all_cars');
+  }
+
+  void _checkWorldTrophies(StorageService s, String world, int startId, int endId) {
+    int worldStars = 0;
+    for (int i = startId; i <= endId; i++) {
+      worldStars += s.getLevelStars(i);
+    }
+    if (worldStars >= 9) s.earnTrophy('${world}_bronze');
+    if (worldStars >= 18) s.earnTrophy('${world}_silver');
+    if (worldStars >= 27) s.earnTrophy('${world}_gold');
   }
 
   void clearTrack() {
