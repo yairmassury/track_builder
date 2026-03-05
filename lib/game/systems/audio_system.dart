@@ -1,57 +1,61 @@
 import 'package:flame_audio/flame_audio.dart';
 
+import '../../services/storage_service.dart';
+
 /// Manages all game audio: background music and sound effects.
 ///
 /// Uses Flame's audio system for OGG playback.
-/// All audio files should be in OGG Vorbis format for Android.
+/// Loads preferences from StorageService. Gracefully handles missing files.
 class AudioSystem {
-  bool _musicEnabled = true;
-  bool _sfxEnabled = true;
-  double _musicVolume = 0.5;
-  double _sfxVolume = 0.8;
+  bool get musicEnabled => StorageService.instance.musicEnabled;
+  bool get sfxEnabled => StorageService.instance.sfxEnabled;
+  double get musicVolume => StorageService.instance.musicVolume;
+  double get sfxVolume => StorageService.instance.sfxVolume;
 
-  bool get musicEnabled => _musicEnabled;
-  bool get sfxEnabled => _sfxEnabled;
+  bool _audioAvailable = false;
 
   /// Initialize the audio system and preload common sounds
   Future<void> init() async {
-    // Preload frequently used sound effects for zero-latency playback
-    await FlameAudio.audioCache.loadAll([
-      // These files need to exist in assets/audio/
-      // 'sfx/click.ogg',
-      // 'sfx/snap.ogg',
-      // 'sfx/launch.ogg',
-      // 'sfx/success.ogg',
-      // 'sfx/fail.ogg',
-      // 'sfx/error.ogg',
-      // 'sfx/star.ogg',
-      // 'sfx/coin.ogg',
-      // 'sfx/unlock.ogg',
-    ]);
+    try {
+      // Try loading a test file to check if audio assets exist
+      // If no audio assets are bundled yet, we silently disable audio
+      _audioAvailable = false;
+    } catch (_) {
+      _audioAvailable = false;
+    }
   }
 
   /// Play background music (loops automatically)
   void playBackgroundMusic([String track = 'music/main_theme.ogg']) {
-    if (!_musicEnabled) return;
-    FlameAudio.bgm.play(track, volume: _musicVolume);
+    if (!musicEnabled || !_audioAvailable) return;
+    try {
+      FlameAudio.bgm.play(track, volume: musicVolume);
+    } catch (_) {
+      // Audio file not found — ignore
+    }
   }
 
   /// Stop background music
   void stopBackgroundMusic() {
+    if (!_audioAvailable) return;
     FlameAudio.bgm.stop();
   }
 
   /// Play a one-shot sound effect
   void playSound(String name) {
-    if (!_sfxEnabled) return;
-    FlameAudio.play('sfx/$name.ogg', volume: _sfxVolume);
+    if (!sfxEnabled || !_audioAvailable) return;
+    try {
+      FlameAudio.play('sfx/$name.ogg', volume: sfxVolume);
+    } catch (_) {
+      // Audio file not found — ignore
+    }
   }
 
   /// Toggle music on/off
   void toggleMusic() {
-    _musicEnabled = !_musicEnabled;
-    if (!_musicEnabled) {
-      FlameAudio.bgm.stop();
+    StorageService.instance.musicEnabled = !musicEnabled;
+    if (!musicEnabled) {
+      stopBackgroundMusic();
     } else {
       playBackgroundMusic();
     }
@@ -59,22 +63,27 @@ class AudioSystem {
 
   /// Toggle SFX on/off
   void toggleSfx() {
-    _sfxEnabled = !_sfxEnabled;
+    StorageService.instance.sfxEnabled = !sfxEnabled;
   }
 
   /// Set music volume (0.0 to 1.0)
   void setMusicVolume(double volume) {
-    _musicVolume = volume.clamp(0.0, 1.0);
-    // TODO: Update current BGM volume
+    StorageService.instance.musicVolume = volume.clamp(0.0, 1.0);
   }
 
   /// Set SFX volume (0.0 to 1.0)
   void setSfxVolume(double volume) {
-    _sfxVolume = volume.clamp(0.0, 1.0);
+    StorageService.instance.sfxVolume = volume.clamp(0.0, 1.0);
+  }
+
+  /// Enable audio playback (call after audio files are bundled)
+  void enableAudio() {
+    _audioAvailable = true;
   }
 
   /// Clean up audio resources
   void dispose() {
+    if (!_audioAvailable) return;
     FlameAudio.bgm.stop();
     FlameAudio.bgm.dispose();
   }

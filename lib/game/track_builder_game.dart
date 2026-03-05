@@ -413,6 +413,8 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
         StorageService.instance.highestUnlockedLevel = levelId + 1;
       }
 
+      _checkTrophies();
+
       overlays.add('LevelComplete');
     } else {
       overlays.add('LevelFailed');
@@ -458,6 +460,26 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     overlays.remove('LevelFailed');
     overlays.remove('RunHud');
     overlays.add('BuildHud');
+  }
+
+  void _checkTrophies() {
+    final s = StorageService.instance;
+    final total = s.totalStars;
+
+    if (total >= 1) s.earnTrophy('first_star');
+    if (total >= 10) s.earnTrophy('ten_stars');
+
+    // Desert world trophies (levels 1-10, max 30 stars)
+    int desertStars = 0;
+    for (int i = 1; i <= 10; i++) {
+      desertStars += s.getLevelStars(i);
+    }
+    if (desertStars >= 9) s.earnTrophy('desert_bronze');
+    if (desertStars >= 18) s.earnTrophy('desert_silver');
+    if (desertStars >= 27) s.earnTrophy('desert_gold');
+
+    // Car collector
+    if (s.unlockedCars.length >= 4) s.earnTrophy('all_cars');
   }
 
   void clearTrack() {

@@ -6,9 +6,14 @@ import 'garage.dart';
 import 'trophy_room.dart';
 import 'settings.dart';
 
-class MainMenu extends StatelessWidget {
+class MainMenu extends StatefulWidget {
   const MainMenu({super.key});
 
+  @override
+  State<MainMenu> createState() => _MainMenuState();
+}
+
+class _MainMenuState extends State<MainMenu> {
   @override
   Widget build(BuildContext context) {
     final storage = StorageService.instance;
@@ -85,7 +90,7 @@ class MainMenu extends StatelessWidget {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const WorldMap()),
-                  ),
+                  ).then((_) => setState(() {})),
                 ),
                 const SizedBox(height: 20),
 
@@ -100,7 +105,7 @@ class MainMenu extends StatelessWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const Garage()),
-                      ),
+                      ).then((_) => setState(() {})),
                     ),
                     const SizedBox(width: 16),
                     _MenuButton(

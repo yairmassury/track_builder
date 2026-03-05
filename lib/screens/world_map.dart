@@ -4,9 +4,14 @@ import '../main.dart';
 import '../models/track_data.dart';
 import '../services/storage_service.dart';
 
-class WorldMap extends StatelessWidget {
+class WorldMap extends StatefulWidget {
   const WorldMap({super.key});
 
+  @override
+  State<WorldMap> createState() => _WorldMapState();
+}
+
+class _WorldMapState extends State<WorldMap> {
   @override
   Widget build(BuildContext context) {
     final storage = StorageService.instance;
@@ -66,6 +71,7 @@ class WorldMap extends StatelessWidget {
                       totalStars: storage.totalStars,
                       onTap: isUnlocked
                           ? () => _openWorld(context, world)
+                              .then((_) => setState(() {}))
                           : null,
                     );
                   },
@@ -78,8 +84,8 @@ class WorldMap extends StatelessWidget {
     );
   }
 
-  void _openWorld(BuildContext context, WorldData world) {
-    Navigator.push(
+  Future<void> _openWorld(BuildContext context, WorldData world) {
+    return Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => _LevelSelect(world: world),
@@ -176,11 +182,16 @@ class _WorldCard extends StatelessWidget {
   }
 }
 
-class _LevelSelect extends StatelessWidget {
+class _LevelSelect extends StatefulWidget {
   final WorldData world;
 
   const _LevelSelect({required this.world});
 
+  @override
+  State<_LevelSelect> createState() => _LevelSelectState();
+}
+
+class _LevelSelectState extends State<_LevelSelect> {
   @override
   Widget build(BuildContext context) {
     final storage = StorageService.instance;
@@ -208,7 +219,7 @@ class _LevelSelect extends StatelessWidget {
                     ),
                     Expanded(
                       child: Text(
-                        world.name,
+                        widget.world.name,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 28,
@@ -229,9 +240,9 @@ class _LevelSelect extends StatelessWidget {
                     mainAxisSpacing: 16,
                     crossAxisSpacing: 16,
                   ),
-                  itemCount: world.levelIds.length,
+                  itemCount: widget.world.levelIds.length,
                   itemBuilder: (context, index) {
-                    final levelId = world.levelIds[index];
+                    final levelId = widget.world.levelIds[index];
                     final stars = storage.getLevelStars(levelId);
                     final isUnlocked =
                         levelId <= storage.highestUnlockedLevel;
@@ -248,7 +259,7 @@ class _LevelSelect extends StatelessWidget {
                                   builder: (_) =>
                                       GameScreen(levelId: levelId),
                                 ),
-                              );
+                              ).then((_) => setState(() {}));
                             }
                           : null,
                     );

@@ -475,7 +475,7 @@ class _RunHud extends StatelessWidget {
 // LEVEL COMPLETE OVERLAY
 // ---------------------------------------------------------------------------
 
-class _LevelCompleteOverlay extends StatelessWidget {
+class _LevelCompleteOverlay extends StatefulWidget {
   final TrackBuilderGame game;
   final VoidCallback onNext;
   final VoidCallback onRetry;
@@ -489,110 +489,168 @@ class _LevelCompleteOverlay extends StatelessWidget {
   });
 
   @override
+  State<_LevelCompleteOverlay> createState() => _LevelCompleteOverlayState();
+}
+
+class _LevelCompleteOverlayState extends State<_LevelCompleteOverlay>
+    with TickerProviderStateMixin {
+  late final AnimationController _starController;
+  late final AnimationController _bounceController;
+  late final Animation<double> _bounceAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _starController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..forward();
+
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _bounceAnim = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    );
+    _bounceController.forward();
+  }
+
+  @override
+  void dispose() {
+    _starController.dispose();
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final stars = game.earnedStars;
-    final coins = game.earnedCoins;
+    final stars = widget.game.earnedStars;
+    final coins = widget.game.earnedCoins;
 
     return Center(
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        margin: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: const Color(0xEE1A1A2E),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.amber, width: 2),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Level Complete!',
-              style: TextStyle(
-                fontSize: 36,
-                color: Colors.amber,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Stars
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(3, (i) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Icon(
-                    i < stars ? Icons.star : Icons.star_border,
-                    color: Colors.amber,
-                    size: 48,
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 12),
-
-            // Time
-            Text(
-              'Time: ${game.runTime.toStringAsFixed(1)}s',
-              style: const TextStyle(color: Colors.white70, fontSize: 18),
-            ),
-            const SizedBox(height: 8),
-
-            // Coins
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.monetization_on,
-                    color: Colors.amber, size: 24),
-                const SizedBox(width: 4),
-                Text(
-                  '+$coins',
-                  style: const TextStyle(
-                    color: Colors.amber,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+      child: ScaleTransition(
+        scale: _bounceAnim,
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          margin: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xEE1A1A2E),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.amber, width: 2),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Level Complete!',
+                style: TextStyle(
+                  fontSize: 36,
+                  color: Colors.amber,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
+              ),
+              const SizedBox(height: 16),
 
-            // Buttons
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _HudButton(icon: Icons.home, onTap: onMenu, size: 48),
-                const SizedBox(width: 16),
-                _HudButton(icon: Icons.replay, onTap: onRetry, size: 48),
-                const SizedBox(width: 16),
-                GestureDetector(
-                  onTap: onNext,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Row(
-                      children: [
-                        Text(
-                          'Next',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+              // Animated stars
+              AnimatedBuilder(
+                animation: _starController,
+                builder: (context, _) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(3, (i) {
+                      final starDelay = i * 0.3;
+                      final progress = (_starController.value - starDelay)
+                          .clamp(0.0, 0.4) / 0.4;
+                      final earned = i < stars;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Transform.scale(
+                          scale: earned ? (0.5 + progress * 0.5) : 1.0,
+                          child: Transform.rotate(
+                            angle: earned ? (1 - progress) * 0.5 : 0,
+                            child: Icon(
+                              earned && progress > 0
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              color: earned && progress > 0
+                                  ? Colors.amber
+                                  : Colors.grey,
+                              size: 52,
+                            ),
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Icon(Icons.arrow_forward, color: Colors.white),
-                      ],
+                      );
+                    }),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Time
+              Text(
+                'Time: ${widget.game.runTime.toStringAsFixed(1)}s',
+                style: const TextStyle(color: Colors.white70, fontSize: 18),
+              ),
+              const SizedBox(height: 8),
+
+              // Coins
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.monetization_on,
+                      color: Colors.amber, size: 24),
+                  const SizedBox(width: 4),
+                  Text(
+                    '+$coins',
+                    style: const TextStyle(
+                      color: Colors.amber,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Buttons
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _HudButton(icon: Icons.home, onTap: widget.onMenu, size: 48),
+                  const SizedBox(width: 16),
+                  _HudButton(icon: Icons.replay, onTap: widget.onRetry, size: 48),
+                  const SizedBox(width: 16),
+                  GestureDetector(
+                    onTap: widget.onNext,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Row(
+                        children: [
+                          Text(
+                            'Next',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward, color: Colors.white),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
