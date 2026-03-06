@@ -12,6 +12,7 @@ import 'components/car.dart';
 import 'components/grid.dart';
 import 'components/grid_renderer.dart';
 import 'components/track_piece.dart';
+import 'components/car_trail.dart';
 import 'components/track_body_renderer.dart';
 import 'components/track_piece_catalog.dart';
 import 'systems/physics_system.dart';
@@ -44,6 +45,7 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
   final Map<String, int> piecesRemaining = {};
   final List<Body> _trackBodies = [];
   TrackBodyRenderer? _trackRenderer;
+  CarTrail? _carTrail;
 
   Car? car;
   late final TrackContactListener _contactListener;
@@ -54,6 +56,7 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
   double _runTime = 0;
   double _stuckTime = 0;
   static const double _stuckThreshold = 3.0;
+  int previousStars = 0;
 
   late GridCell startCell;
   late GridCell endCell;
@@ -314,6 +317,15 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     );
     add(car!);
 
+    // Particle trail behind the car
+    _carTrail = CarTrail(
+      trailColor: carType.color,
+      pixelsPerUnit: _cellPixelSize,
+      offsetX: _gridOffsetX,
+      offsetY: _gridOffsetY,
+    );
+    add(_carTrail!);
+
     Future.delayed(const Duration(milliseconds: 100), () {
       car?.launch(force: 3.0);
     });
@@ -403,6 +415,9 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     if (phase == GamePhase.running && car != null) {
       _runTime += dt;
 
+      // Update trail position
+      _carTrail?.carWorldPos = car!.body.position.clone();
+
       if (_isCarInEndZone()) {
         onRunComplete(success: true);
         return;
@@ -445,6 +460,7 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     overlays.remove('RunHud');
 
     if (success) {
+      previousStars = StorageService.instance.getLevelStars(levelId);
       final stars = scoringSystem.calculateStars(
         piecesUsed: placedPieceComponents.length,
         timeElapsed: _runTime,
@@ -498,6 +514,11 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     if (_trackRenderer != null) {
       remove(_trackRenderer!);
       _trackRenderer = null;
+    }
+
+    if (_carTrail != null) {
+      remove(_carTrail!);
+      _carTrail = null;
     }
 
     for (final body in _trackBodies) {

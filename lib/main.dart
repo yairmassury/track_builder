@@ -667,6 +667,8 @@ class _LevelCompleteOverlayState extends State<_LevelCompleteOverlay>
   Widget build(BuildContext context) {
     final stars = widget.game.earnedStars;
     final coins = widget.game.earnedCoins;
+    final prevStars = widget.game.previousStars;
+    final isNewBest = stars > prevStars;
 
     return Stack(
       children: [
@@ -731,6 +733,19 @@ class _LevelCompleteOverlayState extends State<_LevelCompleteOverlay>
                 },
               ),
               const SizedBox(height: 12),
+
+              if (isNewBest)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    'New Best!',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
 
               // Time
               Text(
