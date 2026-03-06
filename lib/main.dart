@@ -99,6 +99,9 @@ class _GameScreenState extends State<GameScreen> {
                     onMenu: () => Navigator.pop(context),
                   ),
               'InvalidTrack': (ctx, g) => const _InvalidTrackToast(),
+              'Tutorial': (ctx, g) => _TutorialOverlay(
+                    onDismiss: () => game.overlays.remove('Tutorial'),
+                  ),
             },
           ),
         ],
@@ -910,6 +913,100 @@ class _InvalidTrackToast extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TUTORIAL OVERLAY
+// ---------------------------------------------------------------------------
+
+class _TutorialOverlay extends StatelessWidget {
+  final VoidCallback onDismiss;
+
+  const _TutorialOverlay({required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onDismiss,
+      child: Container(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xEE1A1A2E),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.orange, width: 2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'How to Play',
+                  style: TextStyle(
+                    fontSize: 28,
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _tutorialStep(
+                  Icons.touch_app,
+                  '1. Pick a track piece from the bottom',
+                ),
+                _tutorialStep(
+                  Icons.grid_on,
+                  '2. Tap on the grid to place it',
+                ),
+                _tutorialStep(
+                  Icons.rotate_right,
+                  '3. Tap a placed piece to rotate it',
+                ),
+                _tutorialStep(
+                  Icons.route,
+                  '4. Connect start (green) to end (flag)',
+                ),
+                _tutorialStep(
+                  Icons.play_arrow,
+                  '5. Press GO to launch the car!',
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Tap anywhere to start building',
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tutorialStep(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.orange, size: 24),
+          const SizedBox(width: 12),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+        ],
       ),
     );
   }

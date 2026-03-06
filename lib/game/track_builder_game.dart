@@ -4,6 +4,7 @@ import 'dart:ui' show Color, Offset;
 import 'package:flame/components.dart' show Anchor;
 import 'package:flame/events.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 
 import '../models/track_data.dart';
 import '../services/storage_service.dart';
@@ -142,6 +143,11 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
 
     overlays.add('BuildHud');
 
+    // Show tutorial on first ever play
+    if (levelId == 1 && !StorageService.instance.isLevelCompleted(1)) {
+      overlays.add('Tutorial');
+    }
+
     // Configure camera so Forge2D physics bodies align with our pixel grid.
     // Zoom = cellPixelSize means 1 physics unit = 1 grid cell = cellPixelSize pixels.
     // The camera viewfinder is anchored at top-left and offset to match grid position.
@@ -192,6 +198,7 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     piecesRemaining[pieceId] = remaining - 1;
 
     add(component);
+    HapticFeedback.lightImpact();
     return true;
   }
 
@@ -276,6 +283,7 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
     phase = GamePhase.running;
     _runTime = 0;
     _stuckTime = 0;
+    HapticFeedback.mediumImpact();
 
     _createTrackPhysicsBodies();
 
@@ -293,9 +301,16 @@ class TrackBuilderGame extends Forge2DGame with TapCallbacks {
       (startCell.row + 0.3) * grid.gridSize,
     );
 
+    // Use the car selected in the Garage
+    final selectedCarId = StorageService.instance.selectedCar;
+    final carType = CarType.values.firstWhere(
+      (t) => t.name == selectedCarId,
+      orElse: () => CarType.standard,
+    );
+
     car = Car(
       position: carStartPos,
-      carType: CarType.standard,
+      carType: carType,
     );
     add(car!);
 
