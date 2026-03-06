@@ -138,6 +138,26 @@ class _BuildHudState extends State<_BuildHud> {
     super.dispose();
   }
 
+  String _getHintText() {
+    final game = widget.game;
+    if (game.placedPieceComponents.isEmpty) {
+      return 'Start by placing a piece next to the green arrow!';
+    }
+    if (game.validateTrack()) {
+      return 'Track is connected! Press GO to launch the car!';
+    }
+    final startRow = game.startCell.row;
+    final endRow = game.endCell.row;
+    final endCol = game.endCell.col;
+    if (endRow < startRow) {
+      return 'Build towards the top-right to reach the finish flag!';
+    } else if (endRow > startRow) {
+      return 'Build downward to reach the finish flag!';
+    } else {
+      return 'Build to the right (column $endCol) to reach the flag!';
+    }
+  }
+
   TrackPieceType? get _selectedType => widget.game.selectedPieceType;
   set _selectedType(TrackPieceType? val) => widget.game.selectedPieceType = val;
 
@@ -157,21 +177,77 @@ class _BuildHudState extends State<_BuildHud> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    widget.game.levelData.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                            offset: Offset(1, 1),
-                            blurRadius: 3,
-                            color: Colors.black54),
-                      ],
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.game.levelData.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(
+                                offset: Offset(1, 1),
+                                blurRadius: 3,
+                                color: Colors.black54),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            '${widget.game.placedPieceComponents.length} pieces',
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                          ),
+                          if (widget.game.levelData.targetPieces != null) ...[
+                            Text(
+                              ' / ${widget.game.levelData.targetPieces}',
+                              style: TextStyle(
+                                color: widget.game.placedPieceComponents.length <=
+                                        widget.game.levelData.targetPieces!
+                                    ? Colors.green
+                                    : Colors.orange,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                          if (widget.game.levelData.targetTime != null) ...[
+                            const SizedBox(width: 8),
+                            Icon(Icons.timer, color: Colors.white38, size: 12),
+                            Text(
+                              ' ${widget.game.levelData.targetTime!.toInt()}s',
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+                // Hint button (shows path direction)
+                _HudButton(
+                  icon: Icons.lightbulb_outline,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          _getHintText(),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        backgroundColor: Colors.orange.shade700,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 4),
                 // Eraser toggle
                 GestureDetector(
                   onTap: () {
@@ -278,6 +354,34 @@ class _BuildHudState extends State<_BuildHud> {
               }).toList(),
             ),
           ),
+
+          // Bonus objective
+          if (widget.game.levelData.hasBonusObjective &&
+              widget.game.levelData.bonusDescription != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withAlpha(40),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.withAlpha(80)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star, color: Colors.amber, size: 14),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Bonus: ${widget.game.levelData.bonusDescription}',
+                      style: const TextStyle(
+                          color: Colors.amber, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           // Instructions
           if (_selectedType != null)
